@@ -1,0 +1,79 @@
+- hosts: localhost
+  #no_log: true
+  tasks:
+    - name: check the git checkout branch
+      command: git rev-parse --abbrev-ref HEAD
+      args:
+        chdir: /opt/Playbook/github/offers
+      register: git_branch
+
+    - name: check the git status
+      command: git status
+      args:
+        chdir: /opt/Playbook/github/offers
+      register: git_status
+
+    - debug:
+        msg: "{{ git_status.stdout_lines[1].split()[0]  }}"
+
+    - block:
+       - name: pull from remote dinesh to local anand branch
+         command: git pull origin dinesh
+         args:
+           chdir: /opt/Playbook/github/offers
+   
+       - name: push local anand to  remote anand
+         command: git push origin anand
+         args:
+           chdir: /opt/Playbook/github/offers
+         register: git_sync
+
+       - name: git sync status
+         debug: 
+           msg: git sync completed
+         when: git_sync.changed == True
+      when: git_branch.stdout == 'anand' and git_status.stdout_lines[1].split(',')[0] == 'nothing to commit'
+    
+    - block:
+       - name: stage the changes
+         command: git add .
+         args:
+          chdir: /opt/Playbook/github/offers
+       
+       - name: Please enter the commit massge
+         pause:
+           prompt: "enter the commit massgage"
+         register: commit_msg
+
+       - debug:
+           msg: "{{ commit_msg }}"
+
+       - name: git commit the changes
+         command: git commit -m "{{ commit_msg.user_input }}"
+         args:
+           chdir: /opt/Playbook/github/offers
+         register: git_sync
+            
+       - name: git push from local anand to remote anand
+         command: git push origin anand
+         args:
+          chdir: /opt/Playbook/github/offers
+      when: git_branch.stdout == 'anand' and git_status.stdout_lines[1].split()[1] == 'Untracked'
+
+
+
+
+
+
+#   rescue:
+#     - debug:
+#        msg: git sync not completed
+
+
+
+
+
+
+
+
+
